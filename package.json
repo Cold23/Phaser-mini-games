@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.0.0-rc.10",
     "next": "12.2.4",
     "phaser": "^3.55.2",
     "phaser3-rex-plugins": "^1.1.72",
