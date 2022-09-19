@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { Socket } from "phoenix";
 import { supabase } from "../supabse-client";
 export default class MiniSoccer extends Phaser.Scene {
     constructor() {
@@ -56,6 +57,13 @@ export default class MiniSoccer extends Phaser.Scene {
         player.setFixedRotation()
         this.player = player
         player.setName("player")
+        // setInterval(() => {
+        //     this.channel.send({
+        //         type: 'broadcast',
+        //         event: "MOVE",
+        //         payload: { x: this.player.body.velocity.x, y: this.player.body.velocity.y, positionX: this.player.x, positionY: this.player.y }
+        //     })
+        // }, 125);
     }
 
     onOtherLeft() {
@@ -66,6 +74,7 @@ export default class MiniSoccer extends Phaser.Scene {
     }
 
     createEnemyPlayer() {
+
         const player = this.matter.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2, 'players', 1)
         //
         player.y -= 200
@@ -84,38 +93,18 @@ export default class MiniSoccer extends Phaser.Scene {
     }
 
     create() {
-        const channel = supabase.channel("game_1")
+        const socket = new Socket("ws://localhost:4000/socket")
+        socket.connect()
+        const channel = socket.channel('game', { id: Math.ceil(Math.random() * 10000) })
+        channel.join()
+            .receive("ok", resp => { console.log("Joined successfully", resp) })
+            .receive("error", resp => { console.log("Unable to join", resp) })
+
+
+        const field = this.matter.add.sprite(0, 0, 'field')
         const userName = `user-${Math.ceil(Math.random() * 1000)}`
-        channel
-            .on(
-                'broadcast',
-                { event: "MOVE" },
-                (event) => {
-                    console.log(event)
-                    if (!this.enemy) return
-                    this.enemy.setVelocity(event.payload.x, -event.payload.y)
-                }
-            ).on('presence', { event: 'sync' }, () => {
-            })
-            .on('presence', { event: 'join' }, ({ newPresences }) => {
-                if (newPresences[Object.keys(newPresences)[0]].user_name === userName) return
-                this.createEnemyPlayer()
-            })
-            .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-                this.onOtherLeft()
-            }
-            )
-            .subscribe(async status => {
-                if (status === "SUBSCRIBED") {
-                    const status = await channel.track({ user_name: userName })
-                    const users = channel.presenceState()
-                    console.log(users)
-                    this.createPlayer(users)
-                }
-            })
-        this.channel = channel
+
         this.matter.world.disableGravity()
-        const field = this.matter.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2, 'field')
         field.scale = 6
         field.name = "field"
 
@@ -130,7 +119,7 @@ export default class MiniSoccer extends Phaser.Scene {
 
         const particles = this.add.particles("particle")
 
-        const ball = this.matter.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2 - 5, 'players', 2)
+        const ball = this.matter.add.sprite(this.cameras.main.width / 2, this.cameras.main.height / 2, 'players', 2)
         ball.body.collideWorldBounds = true
 
         ball.setBody({
@@ -145,7 +134,7 @@ export default class MiniSoccer extends Phaser.Scene {
         })
         ball.setFixedRotation()
         ball.scale = 6
-        // this.matter.add.collider(ball, player)
+        ball.y -= ball.height / 2
 
         const enenmyGoal = this.matter.add.rectangle(600, 20, 200, 100, {
             isSensor: true
@@ -218,41 +207,23 @@ export default class MiniSoccer extends Phaser.Scene {
 
 
     update() {
-        const direction = [0, 0]
+        this.direction = [0, 0]
         if (this.paused || !this.player) return
         if (this.right.isDown) {
-            direction[0] = 1
+            this.direction[0] = 1
         }
         if (this.left.isDown) {
 
-            direction[0] = -1
+            this.direction[0] = -1
         }
         if (this.forward.isDown) {
-            direction[1] = -1
+            this.direction[1] = -1
 
         }
         if (this.back.isDown) {
-            direction[1] = 1
+            this.direction[1] = 1
         }
-        if (direction.some((e) => e !== 0))
-            this.channel.send({
-                type: 'broadcast',
-                event: "MOVE",
-                payload: { x: direction[0] * 7, y: direction[1] * 7 }
-            })
-        if ((this.player.body.velocity.x !== 0 || this.player.body.velocity.y !== 0) && direction.every((e) => e == 0)) {
-            this.updatePosition = true
-        }
-        if (this.updatePosition) {
-            this.channel.send({
-                type: 'broadcast',
-                event: "MOVE",
-                payload: { x: 0, y: 0, position: this.player.position }
-            }).then((res) => {
-                if (res === 'ok')
-                    this.updatePosition = false
-            })
-        }
-        this.player.setVelocity(direction[0] * 7, direction[1] * 7)
+
+        this.player.setVelocity(this.direction[0] * 7, this.direction[1] * 7)
     }
 }

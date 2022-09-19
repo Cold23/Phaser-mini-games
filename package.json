@@ -13,6 +13,7 @@
     "next": "12.2.4",
     "phaser": "^3.55.2",
     "phaser3-rex-plugins": "^1.1.72",
+    "phoenix": "^1.6.11",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
