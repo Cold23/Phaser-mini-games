@@ -151,7 +151,7 @@ export default class MiniSoccer extends Phaser.Scene {
     this.ping = this.add.text(this.cameras.main.width - 100, 20, 'ping: 0 ms', {
       fontSize: 12,
     })
-    const client = new Colyseus.Client('ws://server-mini-game.herokuapp.com')
+    const client = new Colyseus.Client('wss://server-mini-game.herokuapp.com')
     client
       .joinOrCreate('general')
       .then((room) => {
