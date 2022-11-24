@@ -1,13 +1,20 @@
 import Phaser from 'phaser'
 import * as Colyseus from 'colyseus.js'
+
 export default class MiniSoccer extends Phaser.Scene {
   constructor() {
     super({
       key: 'MiniSoccer',
       physics: {
-        default: 'arcade',
+        default: 'matter',
+        matter: {
+          gravity: { y: 0 },
+        },
       },
     })
+    this.frameCount = 0
+    this.ms = 0
+    this.cooldown = 0
     this.score = { you: 0, other: 0 }
     this.directionStale = [0, 0]
   }
@@ -37,10 +44,24 @@ export default class MiniSoccer extends Phaser.Scene {
   }
 
   createPlayer(position, playersNum) {
-    const player = this.add.sprite(0, 0, 'players', 0)
+    const player = this.matter.add.sprite(0, 0, 'players', 0, {
+      frictionAir: 0,
+      friction: 0,
+    })
     //
-    player.x = position[0]
-    player.y = position[1]
+    player.setPosition(position[0], position[1])
+
+    player.setBody(
+      {
+        type: 'circle',
+        radius: 30,
+      },
+      {
+        mass: 10,
+      },
+    )
+    player.setFixedRotation()
+
     player.scale = 6
     this.player = player
     player.setName('player')
@@ -59,6 +80,14 @@ export default class MiniSoccer extends Phaser.Scene {
         fontSize: 42,
       })
     }
+    const skill = this.add.graphics({
+      fillStyle: {
+        color: 0xffffff,
+        alpha: 1,
+      },
+    })
+    skill.fillCircle(100, this.cameras.main.height * 0.8, 40)
+    this.skill = skill
   }
 
   onOtherLeft() {
@@ -69,12 +98,31 @@ export default class MiniSoccer extends Phaser.Scene {
   }
 
   createEnemyPlayer(position) {
-    const player = this.add.sprite(position[0], position[1], 'players', 1)
+    const player = this.matter.add.sprite(
+      position[0],
+      position[1],
+      'players',
+      1,
+    )
+    player.setBody(
+      {
+        type: 'circle',
+        radius: 30,
+      },
+      {
+        mass: 10,
+      },
+    )
+    player.setFixedRotation()
     //
     player.scale = 6
 
     this.enemy = player
     player.setName('enemy')
+  }
+
+  doPing(ms) {
+    this.ping.text = `ping:${Math.floor(ms)} ms`
   }
 
   updateState(state) {
@@ -84,6 +132,7 @@ export default class MiniSoccer extends Phaser.Scene {
         if (!this.player)
           this.createPlayer(player.position, state.players.length)
         else {
+          this.player.setVelocity(0, 0)
           this.player.setPosition(player.position[0], player.position[1])
         }
       } else {
@@ -99,13 +148,22 @@ export default class MiniSoccer extends Phaser.Scene {
   }
 
   create() {
+    this.ping = this.add.text(this.cameras.main.width - 100, 20, 'ping: 0', {
+      fontSize: 12,
+    })
     const client = new Colyseus.Client('ws://localhost:2567')
     client
       .joinOrCreate('general')
       .then((room) => {
         this.room = room
+        setInterval(() => {
+          this.room.send('ping', { time: this.time.now })
+        }, 250)
         room.onMessage('joined', (msg) => {
           this.updateState(msg.state)
+        })
+        room.onMessage('pong', (msg) => {
+          this.doPing(this.time.now - msg.time)
         })
         room.onMessage('tick', (msg) => {
           if (msg.goal) {
@@ -155,22 +213,58 @@ export default class MiniSoccer extends Phaser.Scene {
         console.log('JOIN ERROR', e)
       })
 
-    const field = this.add.sprite(0, 0, 'field')
+    const field = this.matter.add.sprite(0, 0, 'field')
+
+    this.matter.world.disableGravity()
+    field.scale = 6
+    field.name = 'field'
+
+    field.setBody(
+      { type: 'circle', radius: 0 },
+      {
+        parts: [
+          this.matter.add.rectangle(70, 400, 50, 1000),
+          this.matter.add.rectangle(385, 42, 1000, 50),
+          this.matter.add.rectangle(385, 735, 1000, 50),
+          this.matter.add.rectangle(190, 75, 200, 50),
+          this.matter.add.rectangle(580, 75, 200, 50),
+          this.matter.add.rectangle(695, 400, 50, 1000),
+          this.matter.add.rectangle(190, 705, 200, 50),
+          this.matter.add.rectangle(580, 705, 200, 50),
+        ],
+      },
+    )
+    field.setPosition(this.cameras.main.width / 2, this.cameras.main.height / 2)
+    field.setStatic(true)
 
     field.scale = 6
     field.name = 'field'
 
-    field.setPosition(this.cameras.main.width / 2, this.cameras.main.height / 2)
-
     const particles = this.add.particles('particle')
 
-    const ball = this.add.sprite(
+    const ball = this.matter.add.sprite(
       this.cameras.main.width / 2,
       this.cameras.main.height / 2,
       'players',
       2,
     )
+    ball.body.collideWorldBounds = true
+
+    ball.setBody(
+      {
+        type: 'circle',
+        radius: 12,
+      },
+      {
+        restitution: 1.0,
+        mass: 0.1,
+        frictionAir: 0.025,
+        label: 'ball',
+      },
+    )
+    ball.setFixedRotation()
     ball.scale = 6
+    ball.y -= 8
 
     this.ball = ball
     this.right = this.input.keyboard.addKey('D', true, true)
@@ -178,10 +272,15 @@ export default class MiniSoccer extends Phaser.Scene {
     this.back = this.input.keyboard.addKey('S', true, true)
     this.forward = this.input.keyboard.addKey('W', true, true)
     this.jump = this.input.keyboard.addKey('space')
+    this.shift = this.input.keyboard.addKey('shift')
     ball.setName('ball')
   }
 
-  update() {
+  update(time, dt) {
+    if (this.cooldown > 0) {
+      this.cooldown -= dt
+    }
+
     this.direction = [0, 0]
     if (this.paused || !this.player) return
     if (this.right.isDown) {
@@ -196,14 +295,38 @@ export default class MiniSoccer extends Phaser.Scene {
     if (this.back.isDown) {
       this.direction[1] = 1
     }
+    if (this.shift.isDown && this.cooldown <= 0) {
+      this.skill.setAlpha(0.5)
+      this.dash = true
+      this.player.setVelocity(this.direction[0] * 30, this.direction[1] * 30)
+      setTimeout(() => {
+        this.dash = false
+        this.player.setVelocity(this.direction[0] * 6, this.direction[1] * 6)
+      }, 150)
+      this.room.send('dash', {
+        position: this.player.body.position,
+        direction: this.direction,
+      })
+      setTimeout(() => {
+        this.skill.setAlpha(1)
+      }, 2000)
+      this.cooldown = 2000
+    }
+
     if (
       this.direction[0] === this.directionStale[0] &&
       this.direction[1] === this.directionStale[1]
     )
       return
-    console.log('setting to ', this.direction)
-    if (this.direction !== this.directionStale)
-      this.room.send('velocity', { velocity: this.direction })
+    if (!this.dash)
+      this.player.setVelocity(this.direction[0] * 6, this.direction[1] * 6)
+    if (this.direction !== this.directionStale) {
+      this.room.send('velocity', {
+        velocity: this.direction,
+        startTime: this.serverTime,
+      })
+    }
+
     this.directionStale = this.direction
   }
 }
