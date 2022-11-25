@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { eventsStore } from '../../src/globals'
 
 export default class Preload extends Phaser.Scene {
   constructor() {
@@ -30,6 +31,14 @@ export default class Preload extends Phaser.Scene {
   }
 
   create() {
-    this.scene.start('MiniSoccer')
+    const setEventManager = eventsStore.getState().setEventManager
+    setEventManager(this.events)
+    this.events.on('start', (scene) => {
+      this.scene.start(scene)
+    })
+    this.events.on('stop', (scene) => {
+      this.scene.remove(scene)
+      this.game.destroy(true, false)
+    })
   }
 }

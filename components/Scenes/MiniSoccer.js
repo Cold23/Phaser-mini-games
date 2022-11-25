@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import * as Colyseus from 'colyseus.js'
+import { eventsStore } from '../../src/globals'
 
 export default class MiniSoccer extends Phaser.Scene {
   constructor() {
@@ -12,6 +13,7 @@ export default class MiniSoccer extends Phaser.Scene {
         },
       },
     })
+
     this.frameCount = 0
     this.ms = 0
     this.cooldown = 0
@@ -122,10 +124,13 @@ export default class MiniSoccer extends Phaser.Scene {
   }
 
   doPing(ms) {
+    if (!this.scene.settings) return
+
     this.ping.text = `ping:${Math.floor(ms)} ms`
   }
 
   updateState(state) {
+    if (!this.scene.settings) return
     if (state.paused !== undefined) this.paused = state.paused
     state.players.forEach((player) => {
       if (player.id === this.room.sessionId) {
@@ -148,15 +153,21 @@ export default class MiniSoccer extends Phaser.Scene {
   }
 
   create() {
+    this.events.on(Phaser.Scenes.Events.DESTROY, () => {
+      this.room.leave(true)
+      clearInterval(this.pingInterval)
+    })
     this.ping = this.add.text(this.cameras.main.width - 100, 20, 'ping: 0 ms', {
       fontSize: 12,
     })
-    const client = new Colyseus.Client('wss://server-mini-game.herokuapp.com')
+    const client = new Colyseus.Client('ws://68.183.74.78:2567')
     client
       .joinOrCreate('general')
       .then((room) => {
         this.room = room
-        setInterval(() => {
+        this.pingInterval = setInterval(() => {
+          if (!this.scene.settings) return
+
           this.room.send('ping', { time: this.time.now })
         }, 250)
         room.onMessage('joined', (msg) => {
@@ -280,7 +291,6 @@ export default class MiniSoccer extends Phaser.Scene {
     if (this.cooldown > 0) {
       this.cooldown -= dt
     }
-
     this.direction = [0, 0]
     if (this.paused || !this.player) return
     if (this.right.isDown) {
@@ -295,7 +305,7 @@ export default class MiniSoccer extends Phaser.Scene {
     if (this.back.isDown) {
       this.direction[1] = 1
     }
-    if (this.shift.isDown && this.cooldown <= 0) {
+    if (this.shift.isDown && this.cooldown <= 0 && this.scene.settings) {
       this.skill.setAlpha(0.5)
       this.dash = true
       this.player.setVelocity(this.direction[0] * 30, this.direction[1] * 30)
@@ -320,7 +330,7 @@ export default class MiniSoccer extends Phaser.Scene {
       return
     if (!this.dash)
       this.player.setVelocity(this.direction[0] * 6, this.direction[1] * 6)
-    if (this.direction !== this.directionStale) {
+    if (this.direction !== this.directionStale && this.scene.settings) {
       this.room.send('velocity', {
         velocity: this.direction,
         startTime: this.serverTime,
