@@ -90,6 +90,7 @@ export default class MiniSoccer extends Phaser.Scene {
     })
     skill.fillCircle(100, this.cameras.main.height * 0.8, 40)
     this.skill = skill
+    this.scene.get('Preload').events.emit('loaded')
   }
 
   onOtherLeft() {
@@ -97,6 +98,36 @@ export default class MiniSoccer extends Phaser.Scene {
       this.enemy.destroy(true)
       this.enemy = undefined
     }
+  }
+
+  doInfoText(textContent) {
+    this.sound.play('whistle')
+    const text = this.add.text(
+      this.cameras.main.width / 2,
+      this.cameras.main.height / 2,
+      textContent,
+      {
+        fontSize: 12,
+        color: 'white',
+        stroke: 'black',
+        strokeThickness: 1,
+      },
+    )
+    text.setDepth(10)
+    this.tweens.addCounter({
+      from: 12,
+      to: 64,
+      duration: 125,
+      ease: Phaser.Math.Easing.Quadratic.InOut,
+      onUpdate: (tween) => {
+        text.setFontSize(tween.getValue())
+        text.x = this.cameras.main.width / 2 - text.width / 2
+        text.y = this.cameras.main.height / 2 - text.height / 2
+      },
+    })
+    setTimeout(() => {
+      text.destroy(true)
+    }, 1500)
   }
 
   createEnemyPlayer(position) {
@@ -121,6 +152,7 @@ export default class MiniSoccer extends Phaser.Scene {
 
     this.enemy = player
     player.setName('enemy')
+    this.scene.get('Preload').events.emit('ready')
   }
 
   doPing(ms) {
@@ -160,7 +192,7 @@ export default class MiniSoccer extends Phaser.Scene {
     this.ping = this.add.text(this.cameras.main.width - 100, 20, 'ping: 0 ms', {
       fontSize: 12,
     })
-    const client = new Colyseus.Client('ws://68.183.74.78:2567')
+    const client = new Colyseus.Client('ws://localhost:2567')
     client
       .joinOrCreate('general')
       .then((room) => {
@@ -180,14 +212,22 @@ export default class MiniSoccer extends Phaser.Scene {
           if (msg.goal) {
             if (msg.goal.player === room.sessionId) {
               this.scoreMe.text = Number(this.scoreMe.text) + 1
+              this.doInfoText('YOU SCORED!')
             } else {
               this.scoreOther.text = Number(this.scoreOther.text) + 1
+              this.doInfoText('OPPONENT SCORED!')
             }
+          }
+          if (msg.out) {
+            this.doInfoText('OUT!!')
           }
           this.updateState(msg)
         })
         room.onMessage('ball-collide', () => {
           this.emmiter?.stop()
+          this.sound.play('hit', {
+            volume: 0.5,
+          })
           this.emmiter = particles.createEmitter({
             x: ball.x,
             y: ball.y,
