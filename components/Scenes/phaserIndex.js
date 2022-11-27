@@ -6,6 +6,7 @@ import Preload from './Preload'
 import Portfolio from './Portfolio'
 import WorkScene from './WorkExperience'
 import MiniSoccer from './MiniSoccer'
+import StackingGame from './StackingGame'
 const baseSize = {
   width: 1200,
   height: 762,
@@ -43,6 +44,7 @@ export default function Index() {
     }
     loaded.current = true
     var config = {
+      transparent: true,
       pixelArt: true,
       type: Phaser.AUTO,
       width: baseSize.width,
@@ -67,7 +69,7 @@ export default function Index() {
           },
         ],
       },
-      scene: [Preload, MiniSoccer],
+      scene: [Preload, MiniSoccer, StackingGame],
     }
 
     var game = new Phaser.Game(config)

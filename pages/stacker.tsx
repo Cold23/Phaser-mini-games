@@ -1,6 +1,7 @@
-import Head from 'next/head'
-import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import Head from 'next/head'
+import { useEffect } from 'react'
+import { useState } from 'react'
 import { eventsStore } from '../src/globals'
 
 const DynamicComponentWithNoSSR = dynamic(
@@ -8,22 +9,15 @@ const DynamicComponentWithNoSSR = dynamic(
   { ssr: false },
 )
 
-const Soccer = () => {
+const Stacker = () => {
   const [hydrated, setHydrated] = useState(false)
-  const [waiting, setWaiting] = useState(true)
-  const [loaded, setLoaded] = useState(false)
   const eventManager = eventsStore((state) => state.eventManager)
   useEffect(() => {
-    eventManager?.emit('start', 'MiniSoccer')
+    eventManager?.emit('start', 'StackingGame')
     setHydrated(true)
-    eventManager?.on('ready', () => {
-      setWaiting(false)
-    })
-    eventManager?.on('loaded', () => {
-      setLoaded(true)
-    })
+
     return () => {
-      eventManager?.emit('stop', 'MiniSoccer')
+      eventManager?.emit('stop', 'StackingGame')
     }
   }, [eventManager])
 
@@ -41,18 +35,13 @@ const Soccer = () => {
           width: '100%',
           height: '100%',
           fontFamily: 'pixelfont',
-          backgroundColor: 'black',
+          backgroundColor: 'white',
+          border: '1px solid #6a6a6a22',
         }}
-      >
-        {waiting && loaded && (
-          <div className="z-10 top-0 left-0 text-white absolute flex items-center justify-center w-full h-full backdrop-brightness-50">
-            Waiting for opponent...
-          </div>
-        )}
-      </div>
+      ></div>
       {hydrated ? <DynamicComponentWithNoSSR /> : null}
     </div>
   )
 }
 
-export default Soccer
+export default Stacker

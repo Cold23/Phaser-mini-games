@@ -28,6 +28,8 @@ export default class Preload extends Phaser.Scene {
       frameHeight: 16,
     })
     this.load.image('particle', 'assets/particle.png')
+    this.load.image('item', 'assets/stacker/stacking-item.png')
+    this.load.image('pole', 'assets/stacker/stacking-pole.png')
     this.load.audio('hit', 'assets/hitHurt.wav')
     this.load.audio('whistle', 'assets/whistle8.wav')
   }

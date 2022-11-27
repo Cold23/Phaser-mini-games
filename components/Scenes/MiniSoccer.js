@@ -1,6 +1,5 @@
 import Phaser from 'phaser'
 import * as Colyseus from 'colyseus.js'
-import { eventsStore } from '../../src/globals'
 
 export default class MiniSoccer extends Phaser.Scene {
   constructor() {
@@ -19,6 +18,7 @@ export default class MiniSoccer extends Phaser.Scene {
     this.cooldown = 0
     this.score = { you: 0, other: 0 }
     this.directionStale = [0, 0]
+    this.DASH_COOLDOWN_BASE = 1000
   }
 
   newRound() {
@@ -192,7 +192,7 @@ export default class MiniSoccer extends Phaser.Scene {
     this.ping = this.add.text(this.cameras.main.width - 100, 20, 'ping: 0 ms', {
       fontSize: 12,
     })
-    const client = new Colyseus.Client('wss://envans.me/ws')
+    const client = new Colyseus.Client('ws://localhost:2567')
     client
       .joinOrCreate('general')
       .then((room) => {
@@ -359,8 +359,8 @@ export default class MiniSoccer extends Phaser.Scene {
       })
       setTimeout(() => {
         this.skill.setAlpha(1)
-      }, 2000)
-      this.cooldown = 2000
+      }, this.DASH_COOLDOWN_BASE)
+      this.cooldown = this.DASH_COOLDOWN_BASE
     }
 
     if (
