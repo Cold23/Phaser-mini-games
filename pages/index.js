@@ -18,9 +18,9 @@ const Home = () => {
       <div className="py-2 px-6">
         <p className="text-2xl font-bold">Html Games</p>
       </div>
-      <div className="sm:flex-col px-6 py-2 flex flex-row flex-nowrap justify-evenly items-center w-full h-auto gap-6">
+      <div className=" sm:flex-col px-6 py-2 flex flex-row flex-nowrap justify-evenly items-center w-full h-auto gap-6">
         <Link href={'/soccer'}>
-          <div className="group max-w-xl cursor-pointer hover:drop-shadow-xl transition-all rounded-md drop-shadow-lg w-full h-96 bg-white flex   overflow-hidden flex-col">
+          <div className="appearance-none  group max-w-xl cursor-pointer hover:shadow-xl transition-all rounded-md shadow-lg w-full h-96 bg-white flex   overflow-hidden flex-col">
             <div className="overflow-hidden h-[80%] w-full">
               <img
                 src="assets/soccer_thumbnail.png"
@@ -35,7 +35,7 @@ const Home = () => {
           </div>
         </Link>
         <Link href={'/stacker'}>
-          <div className="group max-w-xl cursor-pointer hover:drop-shadow-xl transition-all rounded-md drop-shadow-lg w-full h-96 bg-white flex   overflow-hidden flex-col">
+          <div className="group max-w-xl cursor-pointer hover:shadow-xl transition-all rounded-md shadow-lg w-full h-96 bg-white flex   overflow-hidden flex-col">
             <div className="overflow-hidden h-[80%] w-full">
               <img
                 src="assets/soccer_thumbnail.png"

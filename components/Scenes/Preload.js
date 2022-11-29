@@ -32,6 +32,10 @@ export default class Preload extends Phaser.Scene {
     this.load.image('pole', 'assets/stacker/stacking-pole.png')
     this.load.audio('hit', 'assets/hitHurt.wav')
     this.load.audio('whistle', 'assets/whistle8.wav')
+    this.load.audio('metal1', ['assets/metal1.ogg', 'assets/metal1.m4a'])
+    this.load.audio('metal2', ['assets/metal2.ogg', 'assets/metal2.m4a'])
+    this.load.audio('metal3', ['assets/metal3.ogg', 'assets/metal3.m4a'])
+    this.load.audio('metal4', ['assets/metal4.ogg', 'assets/metal4.m4a'])
   }
 
   create() {

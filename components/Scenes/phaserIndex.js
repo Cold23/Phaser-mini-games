@@ -2,9 +2,10 @@ import Main from './Main'
 import { useEffect, useRef } from 'react'
 import 'phaser'
 import WebFontLoaderPlugin from 'phaser3-rex-plugins/plugins/webfontloader-plugin.js'
+import OutlinePipelinePlugin from 'phaser3-rex-plugins/plugins/outlinepipeline-plugin'
+
 import Preload from './Preload'
 import Portfolio from './Portfolio'
-import WorkScene from './WorkExperience'
 import MiniSoccer from './MiniSoccer'
 import StackingGame from './StackingGame'
 const baseSize = {
@@ -46,7 +47,7 @@ export default function Index() {
     var config = {
       transparent: true,
       pixelArt: true,
-      type: Phaser.AUTO,
+      type: Phaser.WEBGL,
       width: baseSize.width,
       height: baseSize.height,
       physics: {
@@ -62,6 +63,11 @@ export default function Index() {
       },
       plugins: {
         global: [
+          {
+            key: 'rexOutlinePipeline',
+            plugin: OutlinePipelinePlugin,
+            start: true,
+          },
           {
             key: 'rexWebFontLoader',
             plugin: WebFontLoaderPlugin,
