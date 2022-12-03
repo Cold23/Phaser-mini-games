@@ -4,10 +4,10 @@ import '../styles/globals.css'
 
 function MyApp({ Component, pageProps }) {
   return (
-    <div className="flex flex-col ">
-      <div className="h-[68px] w-full z-10">
+    <div className="flex flex-col bg-gray-800 ">
+      {/* <div className="h-[68px] w-full z-10">
         <Header />
-      </div>
+      </div> */}
       <div className="z-0">
         <Component {...pageProps} />
       </div>

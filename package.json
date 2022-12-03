@@ -10,14 +10,17 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.0.0-rc.10",
+    "@react-three/drei": "^9.46.0",
+    "@react-three/fiber": "^8.9.1",
+    "@react-three/postprocessing": "^2.7.0",
+    "@types/three": "^0.146.0",
     "colyseus.js": "^0.14.13",
     "next": "12.2.4",
     "phaser": "^3.55.2",
     "phaser3-rex-plugins": "^1.1.75",
-    "phoenix": "^1.6.11",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "three": "^0.147.0",
     "zustand": "^4.1.4"
   },
   "devDependencies": {
